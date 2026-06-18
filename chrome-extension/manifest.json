@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "WebPulse Selector — Visual CSS Inspector",
+  "version": "1.0",
+  "description": "Point, click, and automatically copy exact CSS selectors for WebPulse Scraper.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
