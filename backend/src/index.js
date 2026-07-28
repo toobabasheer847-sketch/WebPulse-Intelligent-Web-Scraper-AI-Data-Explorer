@@ -30,25 +30,35 @@ async function ensureApiKeysTable() {
       last_used_at  TIMESTAMP NULL
     )
   `);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_api_keys_user_id   ON api_keys(user_id)`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash  ON api_keys(key_hash)`);
+
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id)`
+  );
+
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash)`
+  );
 }
 
 async function start() {
   try {
     await pool.query('SELECT 1');
     console.log('Database connected');
+
     await ensureApiKeysTable();
     await ensureWebhooksTable();
+
   } catch (err) {
     console.error('Database connection failed:', err.message);
-    console.error('Ensure PostgreSQL is running and migrations have been applied.');
   }
 
   startScheduler();
 
-  app.listen(config.port, () => {
-    console.log(`WebPulse API running on http://localhost:${config.port}`);
+  // Render provides PORT dynamically
+  const PORT = process.env.PORT || config.port;
+
+  app.listen(PORT, () => {
+    console.log(`WebPulse API running on port ${PORT}`);
     console.log(`Environment: ${config.env}`);
   });
 }
