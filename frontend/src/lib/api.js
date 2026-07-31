@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
+const apiBaseUrl = rawApiUrl.endsWith('/api')
+  ? rawApiUrl.replace(/\/$/, '')
+  : `${rawApiUrl.replace(/\/$/, '')}/api`;
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -114,7 +119,7 @@ export const downloadBlob = (data, filename) => {
 
 export const streamChat = (projectId, message, onChunk, onDone, onError) => {
   const token = localStorage.getItem('webpulse_token');
-  const url = `${import.meta.env.VITE_API_URL || '/api'}/projects/${projectId}/chat/stream?message=${encodeURIComponent(message)}`;
+  const url = `${apiBaseUrl}/projects/${projectId}/chat/stream?message=${encodeURIComponent(message)}`;
   const eventSource = new EventSource(url, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });

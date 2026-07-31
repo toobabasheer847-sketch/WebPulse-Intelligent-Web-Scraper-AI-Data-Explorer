@@ -26,7 +26,7 @@ export default function ApiDocsPage() {
     <MarketingLayout>
       <MarketingPageHeader
         title="API Reference"
-        description="REST API for WebPulse. Base URL: http://localhost:3001/api"
+        description={`REST API for WebPulse. Base URL: ${import.meta.env.VITE_API_URL || '/api'}`}
       />
       <div className="mx-auto mt-16 max-w-4xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
