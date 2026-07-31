@@ -14,6 +14,7 @@ function buildSmtpTransporter() {
     port: smtpConfig.port || 587,
     secure: smtpConfig.secure,
     requireTLS: smtpConfig.requireTls,
+    family: 4,
     auth: {
       user: smtpConfig.user,
       pass: smtpConfig.pass,
