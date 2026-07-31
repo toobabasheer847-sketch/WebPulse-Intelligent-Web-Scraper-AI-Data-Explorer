@@ -1,15 +1,17 @@
 import { Queue } from 'bullmq';
-import IORedis from 'ioredis';
+import Redis from 'ioredis';
 import config from '../../config/index.js';
 
 const redisUrl = process.env.REDIS_URL || config.redisUrl;
 
 if (!redisUrl) {
   console.error('❌ Redis is not configured. Set REDIS_URL in your environment or .env file.');
+  throw new Error('Redis URL is not configured');
 }
 
-const connection = new IORedis(redisUrl, {
+const connection = new Redis(redisUrl, {
   maxRetriesPerRequest: null,
+  enableOfflineQueue: false,
 });
 
 connection.on('connect', () => {
