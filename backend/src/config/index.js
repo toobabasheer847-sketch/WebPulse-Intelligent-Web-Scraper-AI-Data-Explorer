@@ -48,9 +48,16 @@ const config = {
   smtp: {
     host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
     port: parseInt(process.env.SMTP_PORT || '2525', 10),
+    secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1' || false,
+    requireTls: process.env.SMTP_REQUIRE_TLS === 'true' || process.env.SMTP_REQUIRE_TLS === '1' || false,
     user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || '',
-    from: process.env.EMAIL_FROM || 'noreply@webpulse.com',
+    pass: process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '',
+    from: process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL || 'noreply@webpulse.com',
+  },
+  email: {
+    provider: (process.env.EMAIL_PROVIDER || 'smtp').toLowerCase(),
+    resendApiKey: process.env.RESEND_API_KEY || '',
+    resendFromEmail: process.env.RESEND_FROM_EMAIL || process.env.EMAIL_FROM || '',
   },
 
   // Rate limit

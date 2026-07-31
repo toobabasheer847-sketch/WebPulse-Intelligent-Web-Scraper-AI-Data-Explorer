@@ -10,6 +10,8 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
+// Trust Railway's proxy headers for correct client IP and rate limiting.
+app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
