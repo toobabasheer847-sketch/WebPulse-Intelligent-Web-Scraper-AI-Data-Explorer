@@ -45,7 +45,13 @@ export const useAuthStore = create((set) => ({
       
       return data;
     } catch (err) {
-      console.error("❌ [authStore.login] Login failed:", err);
+      console.error('❌ [authStore.login] Login failed:', {
+        message: err.message,
+        code: err.code,
+        status: err.response?.status,
+        responseData: err.response?.data,
+        requestUrl: err.config?.url,
+      });
       let message =
         err.response?.data?.error?.message ||
         (err.code === 'ERR_NETWORK' ? 'Cannot reach server. Is the backend running?' : null) ||
@@ -66,6 +72,13 @@ export const useAuthStore = create((set) => ({
       set({ user: data.user, token: data.token, loading: false });
       return data;
     } catch (err) {
+      console.error('❌ [authStore.verifyLogin2FA] 2FA verification failed:', {
+        message: err.message,
+        code: err.code,
+        status: err.response?.status,
+        responseData: err.response?.data,
+        requestUrl: err.config?.url,
+      });
       const message =
         err.response?.data?.error?.message ||
         (err.code === 'ERR_NETWORK' ? 'Cannot reach server. Is the backend running?' : null) ||
@@ -82,6 +95,13 @@ export const useAuthStore = create((set) => ({
       set({ loading: false });
       return data;
     } catch (err) {
+      console.error('❌ [authStore.register] Registration failed:', {
+        message: err.message,
+        code: err.code,
+        status: err.response?.status,
+        responseData: err.response?.data,
+        requestUrl: err.config?.url,
+      });
       const message =
         err.response?.data?.error?.message ||
         (err.code === 'ERR_NETWORK' ? 'Cannot reach server. Is the backend running?' : null) ||
@@ -100,6 +120,13 @@ export const useAuthStore = create((set) => ({
       set({ user: data.user, token: data.token, loading: false });
       return data;
     } catch (err) {
+      console.error('❌ [authStore.verifyOtp] Verification failed:', {
+        message: err.message,
+        code: err.code,
+        status: err.response?.status,
+        responseData: err.response?.data,
+        requestUrl: err.config?.url,
+      });
       const message =
         err.response?.data?.error?.message ||
         (err.code === 'ERR_NETWORK' ? 'Cannot reach server. Is the backend running?' : null) ||
@@ -116,6 +143,13 @@ export const useAuthStore = create((set) => ({
       set({ resendLoading: false });
       return data;
     } catch (err) {
+      console.error('❌ [authStore.resendOtp] Resend failed:', {
+        message: err.message,
+        code: err.code,
+        status: err.response?.status,
+        responseData: err.response?.data,
+        requestUrl: err.config?.url,
+      });
       const message =
         err.response?.data?.error?.message ||
         (err.code === 'ERR_NETWORK' ? 'Cannot reach server. Is the backend running?' : null) ||
