@@ -18,7 +18,7 @@ const config = {
   },
 
   // Redis
-  redisUrl: process.env.REDIS_URL,
+  redisUrl: process.env.REDIS_URL || '',
 
   // OpenAI
   openai: {

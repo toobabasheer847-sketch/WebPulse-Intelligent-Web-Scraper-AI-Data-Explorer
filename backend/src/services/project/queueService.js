@@ -2,15 +2,39 @@ import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 import config from '../../config/index.js';
 
-const connection = new IORedis(config.redisUrl, { maxRetriesPerRequest: null });
+const redisUrl = process.env.REDIS_URL || config.redisUrl;
+
+if (!redisUrl) {
+  console.error('❌ Redis is not configured. Set REDIS_URL in your environment or .env file.');
+}
+
+const connection = new IORedis(redisUrl, {
+  maxRetriesPerRequest: null,
+});
+
+connection.on('connect', () => {
+  console.log('🔗 Redis client connected');
+});
+
+connection.on('ready', () => {
+  console.log('✅ Redis client ready');
+});
+
+connection.on('error', (err) => {
+  console.error('❌ Redis connection error:', err.message);
+});
+
+connection.on('reconnecting', (delay) => {
+  console.warn(`⏳ Redis reconnecting in ${delay}ms`);
+});
 
 // Fix the MISCONF Redis write error automatically for local environment
 connection.config('SET', 'stop-writes-on-bgsave-error', 'no')
   .then(() => {
-    console.log("⚙️ Redis bypass config set: stop-writes-on-bgsave-error = no");
+    console.log('⚙️ Redis bypass config set: stop-writes-on-bgsave-error = no');
   })
-  .catch(err => {
-    console.warn("⚠️ Failed to set Redis config:", err.message);
+  .catch((err) => {
+    console.warn('⚠️ Failed to set Redis config:', err.message);
   });
 
 export const scrapeQueue = new Queue('scrape-jobs', {
