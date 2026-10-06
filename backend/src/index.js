@@ -57,9 +57,19 @@ async function start() {
   // Render provides PORT dynamically
   const PORT = process.env.PORT || config.port;
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`WebPulse API running on port ${PORT}`);
     console.log(`Environment: ${config.env}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use. Stop the existing backend process or change PORT and restart.`);
+      process.exit(1);
+    }
+
+    console.error('Server startup error:', err.message);
+    process.exit(1);
   });
 }
 

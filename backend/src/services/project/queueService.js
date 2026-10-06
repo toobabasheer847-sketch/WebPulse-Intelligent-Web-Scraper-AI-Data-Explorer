@@ -2,70 +2,92 @@ import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 import config from '../../config/index.js';
 
-const redisUrl = process.env.REDIS_URL || config.redisUrl;
+const LOCAL_REDIS_URL = 'redis://127.0.0.1:6379';
 
-if (!redisUrl) {
-  console.error('❌ Redis is not configured. Set REDIS_URL in your environment or .env file.');
-  throw new Error('Redis URL is not configured');
+function resolveRedisUrl() {
+  const configuredUrl = (process.env.REDIS_URL || config.redisUrl || '').trim();
+
+  if (!configuredUrl) {
+    return process.env.NODE_ENV === 'production' ? null : LOCAL_REDIS_URL;
+  }
+
+  const isRailwayInternalHost = /railway\.internal/i.test(configuredUrl);
+  const isMissingUrlScheme = !/^redis(?:s)?:\/\//i.test(configuredUrl);
+
+  if (isRailwayInternalHost || isMissingUrlScheme) {
+    if (process.env.NODE_ENV === 'production') {
+      return configuredUrl;
+    }
+
+    console.warn(
+      '⚠️ REDIS_URL points to a non-routable local host or an invalid format. Falling back to local Redis at 127.0.0.1:6379.'
+    );
+    return LOCAL_REDIS_URL;
+  }
+
+  return configuredUrl;
 }
 
-const connection = new Redis(redisUrl, {
+const redisUrl = resolveRedisUrl();
+const connection = redisUrl ? new Redis(redisUrl, {
   maxRetriesPerRequest: null,
   enableOfflineQueue: false,
-});
+}) : null;
 
-connection.on('connect', () => {
-  console.log('🔗 Redis client connected');
-});
+if (connection) {
+  connection.on('connect', () => {
+    console.log('🔗 Redis client connected');
+  });
 
-connection.on('ready', async () => {
-  console.log('✅ Redis client ready');
+  connection.on('ready', async () => {
+    console.log('✅ Redis client ready');
 
-  try {
-    await connection.config(
-      'SET',
-      'stop-writes-on-bgsave-error',
-      'no'
-    );
+    try {
+      await connection.config(
+        'SET',
+        'stop-writes-on-bgsave-error',
+        'no'
+      );
 
-    console.log(
-      '⚙️ Redis config updated: stop-writes-on-bgsave-error = no'
-    );
-  } catch (err) {
-    console.warn(
-      '⚠️ Redis config update skipped:',
-      err.message
-    );
-  }
-});
+      console.log(
+        '⚙️ Redis config updated: stop-writes-on-bgsave-error = no'
+      );
+    } catch (err) {
+      console.warn(
+        '⚠️ Redis config update skipped:',
+        err.message
+      );
+    }
+  });
 
-connection.on('error', (err) => {
-  console.error('❌ Redis connection error:', err.message);
-});
+  connection.on('error', (err) => {
+    console.error('❌ Redis connection error:', err.message);
+  });
 
-connection.on('reconnecting', (delay) => {
-  console.warn(`⏳ Redis reconnecting in ${delay}ms`);
-});
+  connection.on('reconnecting', (delay) => {
+    console.warn(`⏳ Redis reconnecting in ${delay}ms`);
+  });
+}
 
+export const scrapeQueue = connection
+  ? new Queue('scrape-jobs', {
+      connection,
 
-export const scrapeQueue = new Queue('scrape-jobs', {
-  connection,
-
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 5000,
-    },
-    removeOnComplete: {
-      count: 100,
-    },
-    removeOnFail: {
-      count: 50,
-    },
-  },
-});
-
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: {
+          count: 100,
+        },
+        removeOnFail: {
+          count: 50,
+        },
+      },
+    })
+  : null;
 
 export async function enqueueScrapeJob({
   projectId,
@@ -73,6 +95,13 @@ export async function enqueueScrapeJob({
   userId,
   trigger = 'manual',
 }) {
+  if (!scrapeQueue) {
+    console.warn(
+      '⚠️ Scrape queue is disabled because Redis is unavailable. Set REDIS_URL to a reachable Redis instance or start the local Redis service.'
+    );
+    return null;
+  }
+
   return scrapeQueue.add(
     'scrape',
     {
@@ -86,7 +115,6 @@ export async function enqueueScrapeJob({
     }
   );
 }
-
 
 export function getQueueConnection() {
   return connection;

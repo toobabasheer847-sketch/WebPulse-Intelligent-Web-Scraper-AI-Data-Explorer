@@ -53,6 +53,15 @@ export const authApi = {
   me: () => api.get('/auth/me'),
 
   updateProfile: (data) => api.put('/auth/profile', data),
+
+  generate2FA: () => api.post('/auth/2fa/generate'),
+
+  enable2FA: (code) => api.post('/auth/2fa/enable', { code }),
+
+  disable2FA: (code) => api.post('/auth/2fa/disable', { code }),
+
+  verifyLogin2FA: (tempToken, code) =>
+    api.post('/auth/login/verify-2fa', { tempToken, code }),
 };
 
 

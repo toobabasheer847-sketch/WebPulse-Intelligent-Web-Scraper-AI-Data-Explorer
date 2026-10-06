@@ -26,13 +26,27 @@ function buildSmtpTransporter() {
 }
 
 const smtpTransporter = buildSmtpTransporter();
+const hasResendConfig = Boolean(emailConfig.resendApiKey && emailConfig.resendFromEmail);
+const hasSmtpConfig = Boolean(smtpTransporter);
+
+function chooseEmailProvider() {
+  if (emailConfig.provider === 'resend' && hasResendConfig) {
+    return 'resend';
+  }
+
+  if (hasSmtpConfig) {
+    return 'smtp';
+  }
+
+  return 'resend';
+}
 
 if (smtpTransporter) {
-  console.log(`📧 SMTP email transport configured for ${smtpConfig.host}:${smtpConfig.port}`);
-} else if (emailConfig.provider === 'resend' && emailConfig.resendApiKey) {
-  console.log('📧 Resend email provider configured');
+  console.log(`?? SMTP email transport configured for ${smtpConfig.host}:${smtpConfig.port}`);
+} else if (hasResendConfig) {
+  console.log('?? Resend email provider configured');
 } else {
-  console.warn('⚠️ No email transport configured. Set EMAIL_PROVIDER=resend with RESEND_API_KEY or configure SMTP_* variables.');
+  console.warn('?? No email transport configured. Set EMAIL_PROVIDER=resend with RESEND_API_KEY or configure SMTP_* variables.');
 }
 
 async function sendWithResend(email, otp) {
@@ -74,8 +88,7 @@ async function sendWithResend(email, otp) {
 }
 
 export async function sendVerificationEmail(email, otp) {
-  console.log('📨 Preparing to send verification email to:', email);
-  console.log('🔑 Verification OTP:', otp);
+  console.log('?? Preparing to send verification email to:', email);
 
   const mailOptions = {
     from: smtpConfig.from,
@@ -96,27 +109,35 @@ export async function sendVerificationEmail(email, otp) {
   };
 
   try {
-    let info;
+    const provider = chooseEmailProvider();
 
-    if (emailConfig.provider === 'resend' && emailConfig.resendApiKey) {
-      info = await sendWithResend(email, otp);
-      console.log('✅ Email sent successfully via Resend');
-      console.log('📄 Message ID:', info.messageId);
-      console.log('📨 Accepted recipients:', info.accepted);
-      return info;
+    if (provider === 'resend' && hasResendConfig) {
+      try {
+        const info = await sendWithResend(email, otp);
+        console.log('? Email sent successfully via Resend');
+        console.log('?? Message ID:', info.messageId);
+        console.log('?? Accepted recipients:', info.accepted);
+        return info;
+      } catch (resendError) {
+        if (!hasSmtpConfig) {
+          throw resendError;
+        }
+
+        console.warn('?? Resend failed; falling back to SMTP for email verification.');
+      }
     }
 
     if (!smtpTransporter) {
       throw new Error('No email transport configured. Set EMAIL_PROVIDER=resend with RESEND_API_KEY or configure SMTP_* variables.');
     }
 
-    info = await smtpTransporter.sendMail(mailOptions);
-    console.log('✅ Email sent successfully via SMTP');
-    console.log('📄 Message ID:', info.messageId);
-    console.log('📨 Accepted recipients:', info.accepted);
+    const info = await smtpTransporter.sendMail(mailOptions);
+    console.log('? Email sent successfully via SMTP');
+    console.log('?? Message ID:', info.messageId);
+    console.log('?? Accepted recipients:', info.accepted);
     return info;
   } catch (error) {
-    console.error('❌ Failed to send verification email:');
+    console.error('? Failed to send verification email:');
     console.error('   Error message:', error.message);
     console.error('   Error code:', error.code);
     console.error('   Error command:', error.command);
