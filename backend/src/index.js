@@ -41,18 +41,24 @@ async function ensureApiKeysTable() {
 }
 
 async function start() {
+  let databaseReady = false;
+
   try {
     await pool.query('SELECT 1');
     console.log('Database connected');
 
     await ensureApiKeysTable();
     await ensureWebhooksTable();
-
+    databaseReady = true;
   } catch (err) {
     console.error('Database connection failed:', err.message);
   }
 
-  startScheduler();
+  if (databaseReady) {
+    startScheduler();
+  } else {
+    console.warn('Scrape scheduler disabled until database connectivity is restored.');
+  }
 
   // Render provides PORT dynamically
   const PORT = process.env.PORT || config.port;

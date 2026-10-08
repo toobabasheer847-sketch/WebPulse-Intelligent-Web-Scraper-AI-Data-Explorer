@@ -27,6 +27,8 @@ Production-ready full-stack SaaS for web scraping, change detection, analytics, 
 docker compose up -d
 ```
 
+PostgreSQL and Redis are available at `localhost:5433` and `localhost:6380`. These host ports avoid conflicts with locally installed services on the default ports. Set `DATABASE_URL` and `REDIS_URL` to match.
+
 ### 2. Configure environment
 
 ```bash
